@@ -75,7 +75,9 @@
     .kitten-wrap:hover .cat, .kitten-wrap:focus-visible .cat { transform: rotate(-3deg) translateX(4px); }
     .eye { transition: opacity .15s ease; }
     .nuzzle-eyes, .nuzzle-mouth { opacity: 0; transition: opacity .16s ease; }
+    .smile { transition: opacity .16s ease; }
     .kitten-wrap:hover .eye, .kitten-wrap:focus-visible .eye { opacity: 0; }
+    .kitten-wrap:hover .smile, .kitten-wrap:focus-visible .smile { opacity: 0; }
     .kitten-wrap:hover .nuzzle-eyes, .kitten-wrap:focus-visible .nuzzle-eyes,
     .kitten-wrap:hover .nuzzle-mouth, .kitten-wrap:focus-visible .nuzzle-mouth { opacity: 1; }
     .purr { transform-origin: 150px 245px; animation: purr 2.5s ease-in-out infinite; }
@@ -157,12 +159,12 @@
       ["ears", "body", "head", "face", "accessory"].forEach(id => $(id).replaceChildren());
       const ears = $("ears"), body = $("body"), head = $("head"), face = $("face"), acc = $("accessory");
       // Pixel-cut ear silhouettes and inset ear pixels.
-      path(ears, "M76 120V72h12V60h24v12h12v48h-12v12H88v-12z", cat.shade);
-      path(ears, "M82 112V76h12V70h14v10h10v34h-10v10H92v-12z", cat.fur);
-      path(ears, "M94 105V82h17v10h7v23h-9v-10z", cat.inner);
-      path(ears, "M176 120V72h12V60h24v12h12v48h-12v12h-24v-12z", cat.shade);
-      path(ears, "M182 114V80h10V70h14v6h12v36h-12v12h-14v-10z", cat.fur);
-      path(ears, "M184 115V92h7V82h17v23l-15 15z", cat.inner);
+      path(ears, "M78 120V72h12V60h24v12h12v48h-12v12H90v-12z", cat.shade);
+      path(ears, "M84 114V78h12V72h12v6h12v30h-12v12H96v-12z", cat.fur);
+      path(ears, "M96 102V84h12v6h12v18h-12v6h-6v-12z", cat.inner);
+      path(ears, "M174 120V72h12V60h24v12h12v48h-12v12h-24v-12z", cat.shade);
+      path(ears, "M180 114V78h12v-6h12v6h12v30h-12v12h-12v-12z", cat.fur);
+      path(ears, "M180 108V90h12v-6h12v18h-12v12h-6v-6z", cat.inner);
       // Soft little loaf body, paws, and tail.
       path(body, "M78 206v-18h12v-12h24v-10h72v10h24v12h12v18h-12v24h-12v12H90v-12H78z", cat.shade);
       path(body, "M84 206v-18h12v-12h24v-8h60v8h24v12h12v18h-12v18h-12v12H96v-12H84z", cat.fur);
@@ -185,13 +187,13 @@
       path(face, "M102 148h24v6h-6v6h-12v-6h-6z M174 148h24v6h-6v6h-12v-6h-6z", cat.eyes, { class: "nuzzle-eyes" });
       // Muzzle, nose, mouth, and whiskers.
       rect(face, 132, 162, 18, 12, cat.light); rect(face, 150, 162, 18, 12, cat.light);
-      path(face, "M141 160h18v8h-6v6h-6v-6h-6z", cat.nose);
-      path(face, "M150 174v8h-12v6h-6v-6h6v-6z M150 182h12v6h6v-6h-6v-6h-6z", cat.eyes);
-      path(face, "M132 172v8h-12v-4h-12v-4h18z M168 172v8h12v-4h12v-4h-18z", cat.eyes, { opacity: ".75" });
-      path(face, "M147 172v8h6v-8z M135 180h15v6h-9v6h-6z M150 180h15v12h-6v-6h-9z", cat.eyes, { class: "nuzzle-mouth" });
+      path(face, "M144 162h12v6h-6v6h-6z", cat.nose);
+      path(face, "M150 174v8h-12v6h-6v-6h6v-6h12z M150 182h12v6h6v-6h-6v-6h-12z", cat.eyes, { class: "smile" });
+      path(face, "M108 174h24v6h-24z M114 186h12v6h-12z M168 174h24v6h-24z M174 186h12v6h-12z", cat.eyes, { opacity: ".55" });
+      path(face, "M144 174h12v6h-6v6h-6z M138 180h6v6h-6z M156 180h6v6h-6z", cat.eyes, { class: "nuzzle-mouth" });
       // A tiny seasonal accessory gives each kitten its own personality.
       if (cat.kind === "bow") {
-        path(acc, "M104 96l-18-12v18l18 6z M116 96l18-12v18l-18 6z", cat.accent); rect(acc, 104, 90, 12, 12, cat.nose);
+        path(acc, "M108 96l-12-12v18l12 6z M120 96l18-12v18l-18 6z", cat.accent); rect(acc, 108, 90, 12, 12, cat.nose);
       } else if (cat.kind === "scarf") {
         path(acc, "M96 186h108v12H96z M174 192h18v30h-12v-6h-6z", cat.accent); rect(acc, 108, 186, 72, 6, "#fff8ee", { opacity: ".6" });
       } else if (cat.kind === "flower") {
