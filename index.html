@@ -93,6 +93,8 @@
     button:active { transform: translateY(3px); box-shadow: 0 1px 0 #e9d6c8; }
     button:focus-visible, .kitten-wrap:focus-visible { outline: 3px solid #dc91a2; outline-offset: 5px; }
     .timer { min-width: 72px; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+    .sound-row { margin-top: 18px; }
+    #sound-toggle[aria-pressed="true"] { border-color: #e3b0ba; background: #fff1ed; color: #9b596a; }
     .hint { margin: 23px 0 0; color: #a39291; font-size: 13px; }
     @keyframes purr { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
     @keyframes twinkle { 0%,100% { opacity: .45; transform: scale(.85) rotate(0); } 50% { opacity: 1; transform: scale(1.15) rotate(12deg); } }
@@ -130,7 +132,8 @@
       <span class="timer" id="timer" aria-live="polite">Next in 15s</span>
       <button id="next" type="button">Next kitten <span aria-hidden="true">→</span></button>
     </div>
-    <p class="hint">Hover over your kitten for a little nuzzle ♡</p>
+    <div class="sound-row"><button id="sound-toggle" type="button" aria-pressed="false">♫ Turn meows on</button></div>
+    <p class="hint" id="hint">Turn on meows, then hover over your kitten for a little nuzzle ♡</p>
   </main>
   <script>
     const kittens = [
@@ -144,6 +147,9 @@
     let index = 0;
     let seconds = 15;
     let switchTimer;
+    let audioContext;
+    let soundEnabled = false;
+    let lastMeowAt = 0;
     function rect(parent, x, y, w, h, fill, extra = {}) {
       const el = document.createElementNS(NS, "rect");
       for (const [key, value] of Object.entries({ x, y, width: w, height: h, fill, ...extra })) el.setAttribute(key, value);
@@ -215,6 +221,66 @@
     }
     $("next").addEventListener("click", () => setKitten(index + 1));
     $("prev").addEventListener("click", () => setKitten(index - 1));
+    function playMeow() {
+      if (!soundEnabled || !audioContext || audioContext.state !== "running") return;
+      const now = audioContext.currentTime;
+      if (now - lastMeowAt < 0.45) return;
+      lastMeowAt = now;
+
+      const voice = audioContext.createOscillator();
+      const overtone = audioContext.createOscillator();
+      const filter = audioContext.createBiquadFilter();
+      const volume = audioContext.createGain();
+      voice.type = "triangle";
+      overtone.type = "sine";
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(1900, now);
+      filter.Q.setValueAtTime(0.7, now);
+      const pitch = 470 + index * 28;
+      voice.frequency.setValueAtTime(pitch, now);
+      voice.frequency.exponentialRampToValueAtTime(pitch * 1.65, now + 0.09);
+      voice.frequency.exponentialRampToValueAtTime(pitch * 0.82, now + 0.34);
+      overtone.frequency.setValueAtTime(pitch * 2, now);
+      overtone.frequency.exponentialRampToValueAtTime(pitch * 3.3, now + 0.09);
+      overtone.frequency.exponentialRampToValueAtTime(pitch * 1.64, now + 0.34);
+      volume.gain.setValueAtTime(0.0001, now);
+      volume.gain.exponentialRampToValueAtTime(0.055, now + 0.035);
+      volume.gain.exponentialRampToValueAtTime(0.0001, now + 0.36);
+      voice.connect(filter);
+      overtone.connect(filter);
+      filter.connect(volume);
+      volume.connect(audioContext.destination);
+      voice.start(now);
+      overtone.start(now);
+      voice.stop(now + 0.37);
+      overtone.stop(now + 0.37);
+    }
+    $("sound-toggle").addEventListener("click", async () => {
+      if (soundEnabled) {
+        soundEnabled = false;
+      } else {
+        const AudioContextType = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextType) {
+          $("sound-toggle").textContent = "Sound unavailable";
+          $("sound-toggle").disabled = true;
+          return;
+        }
+        audioContext ||= new AudioContextType();
+        try {
+          await audioContext.resume();
+          soundEnabled = audioContext.state === "running";
+        } catch {
+          soundEnabled = false;
+        }
+      }
+      $("sound-toggle").setAttribute("aria-pressed", String(soundEnabled));
+      $("sound-toggle").textContent = soundEnabled ? "♫ Meows on · click to mute" : "♫ Turn meows on";
+      $("hint").textContent = soundEnabled
+        ? "Hover over your kitten for a little nuzzle and meow ♡"
+        : "Turn on meows, then hover over your kitten for a little nuzzle ♡";
+    });
+    $("kitten").addEventListener("pointerenter", playMeow);
+    $("kitten").addEventListener("focus", playMeow);
     $("kitten").addEventListener("click", () => $("kitten").classList.toggle("loved"));
     $("kitten").addEventListener("keydown", event => {
       if (event.key === "Enter" || event.key === " ") { event.preventDefault(); $("kitten").classList.toggle("loved"); }
