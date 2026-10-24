@@ -132,15 +132,15 @@
       <span class="timer" id="timer" aria-live="polite">Next in 15s</span>
       <button id="next" type="button">Next kitten <span aria-hidden="true">→</span></button>
     </div>
-    <div class="sound-row"><button id="sound-toggle" type="button" aria-pressed="false">♫ Turn meows on</button></div>
-    <p class="hint" id="hint">Turn on meows, then hover over your kitten for a little nuzzle ♡</p>
+    <div class="sound-row"><button id="sound-toggle" type="button" aria-pressed="false">♫ Turn sounds on</button></div>
+    <p class="hint" id="hint">Turn on sounds for kitten voices and a gentle flute tune ♡</p>
   </main>
   <script>
     const kittens = [
-      { name: "Mochi · the daydreamer", fur: "#f3c7bd", shade: "#df9f9c", light: "#ffe5d9", inner: "#c77883", nose: "#d8798d", eyes: "#57434b", accent: "#d9889b", kind: "bow" },
-      { name: "Pippin · the little cloud", fur: "#e8e2d8", shade: "#c9c0b8", light: "#fff8e9", inner: "#db9e9e", nose: "#cf8291", eyes: "#536b72", accent: "#a8c8c2", kind: "scarf" },
-      { name: "Peaches · the sunbeam", fur: "#efbd7e", shade: "#d89659", light: "#ffe2a8", inner: "#c97875", nose: "#ce7785", eyes: "#654638", accent: "#e9af67", kind: "flower" },
-      { name: "Biscuit · the cozy one", fur: "#b8a0c8", shade: "#9478aa", light: "#e0cbe9", inner: "#ce91a2", nose: "#c9758c", eyes: "#51465f", accent: "#ddabc3", kind: "hat" }
+      { name: "Mochi · the daydreamer", fur: "#f3c7bd", shade: "#df9f9c", light: "#ffe5d9", inner: "#c77883", nose: "#d8798d", eyes: "#57434b", accent: "#d9889b", kind: "bow", voice: { pitch: [620, 770], length: [0.48, 0.72], doubleChance: 0.08, purrChance: 0.48, purrPitch: 118 } },
+      { name: "Pippin · the little cloud", fur: "#e8e2d8", shade: "#c9c0b8", light: "#fff8e9", inner: "#db9e9e", nose: "#cf8291", eyes: "#536b72", accent: "#a8c8c2", kind: "scarf", voice: { pitch: [740, 940], length: [0.24, 0.38], doubleChance: 0.7, purrChance: 0.2, purrPitch: 142 } },
+      { name: "Peaches · the sunbeam", fur: "#efbd7e", shade: "#d89659", light: "#ffe2a8", inner: "#c97875", nose: "#ce7785", eyes: "#654638", accent: "#e9af67", kind: "flower", voice: { pitch: [560, 830], length: [0.28, 0.52], doubleChance: 0.42, purrChance: 0.36, purrPitch: 132 } },
+      { name: "Biscuit · the cozy one", fur: "#b8a0c8", shade: "#9478aa", light: "#e0cbe9", inner: "#ce91a2", nose: "#c9758c", eyes: "#51465f", accent: "#ddabc3", kind: "hat", voice: { pitch: [360, 510], length: [0.52, 0.82], doubleChance: 0.12, purrChance: 0.72, purrPitch: 104 } }
     ];
     const $ = (id) => document.getElementById(id);
     const NS = "http://www.w3.org/2000/svg";
@@ -150,6 +150,8 @@
     let audioContext;
     let soundEnabled = false;
     let lastMeowAt = 0;
+    let musicBus;
+    let melodyTimer;
     function rect(parent, x, y, w, h, fill, extra = {}) {
       const el = document.createElementNS(NS, "rect");
       for (const [key, value] of Object.entries({ x, y, width: w, height: h, fill, ...extra })) el.setAttribute(key, value);
@@ -221,12 +223,9 @@
     }
     $("next").addEventListener("click", () => setKitten(index + 1));
     $("prev").addEventListener("click", () => setKitten(index - 1));
-    function playMeow() {
-      if (!soundEnabled || !audioContext || audioContext.state !== "running") return;
+    function randomBetween(min, max) { return min + Math.random() * (max - min); }
+    function playMeowTone(pitch, length) {
       const now = audioContext.currentTime;
-      if (now - lastMeowAt < 0.45) return;
-      lastMeowAt = now;
-
       const voice = audioContext.createOscillator();
       const overtone = audioContext.createOscillator();
       const filter = audioContext.createBiquadFilter();
@@ -234,30 +233,131 @@
       voice.type = "triangle";
       overtone.type = "sine";
       filter.type = "lowpass";
-      filter.frequency.setValueAtTime(1900, now);
-      filter.Q.setValueAtTime(0.7, now);
-      const pitch = 470 + index * 28;
+      filter.frequency.setValueAtTime(2100, now);
+      filter.Q.setValueAtTime(0.8, now);
       voice.frequency.setValueAtTime(pitch, now);
-      voice.frequency.exponentialRampToValueAtTime(pitch * 1.65, now + 0.09);
-      voice.frequency.exponentialRampToValueAtTime(pitch * 0.82, now + 0.34);
+      voice.frequency.exponentialRampToValueAtTime(pitch * 1.55, now + length * 0.24);
+      voice.frequency.exponentialRampToValueAtTime(pitch * 0.78, now + length);
       overtone.frequency.setValueAtTime(pitch * 2, now);
-      overtone.frequency.exponentialRampToValueAtTime(pitch * 3.3, now + 0.09);
-      overtone.frequency.exponentialRampToValueAtTime(pitch * 1.64, now + 0.34);
+      overtone.frequency.exponentialRampToValueAtTime(pitch * 3.1, now + length * 0.24);
+      overtone.frequency.exponentialRampToValueAtTime(pitch * 1.56, now + length);
       volume.gain.setValueAtTime(0.0001, now);
-      volume.gain.exponentialRampToValueAtTime(0.055, now + 0.035);
-      volume.gain.exponentialRampToValueAtTime(0.0001, now + 0.36);
+      volume.gain.exponentialRampToValueAtTime(0.05, now + Math.min(0.045, length * 0.12));
+      volume.gain.exponentialRampToValueAtTime(0.0001, now + length + 0.025);
       voice.connect(filter);
       overtone.connect(filter);
       filter.connect(volume);
       volume.connect(audioContext.destination);
       voice.start(now);
       overtone.start(now);
-      voice.stop(now + 0.37);
-      overtone.stop(now + 0.37);
+      voice.stop(now + length + 0.04);
+      overtone.stop(now + length + 0.04);
+    }
+    function playPurr(pitch = kittens[index].voice.purrPitch, length = 0.9) {
+      if (!soundEnabled || !audioContext || audioContext.state !== "running") return;
+      const now = audioContext.currentTime;
+      const rumble = audioContext.createOscillator();
+      const filter = audioContext.createBiquadFilter();
+      const volume = audioContext.createGain();
+      rumble.type = "triangle";
+      rumble.frequency.setValueAtTime(pitch, now);
+      rumble.frequency.linearRampToValueAtTime(pitch * 0.94, now + length);
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(520, now);
+      volume.gain.setValueAtTime(0.0001, now);
+      const pulse = 0.055;
+      for (let t = 0; t < length; t += pulse) {
+        const start = now + t;
+        volume.gain.setValueAtTime(0.003, start);
+        volume.gain.linearRampToValueAtTime(0.022, start + pulse * 0.45);
+        volume.gain.linearRampToValueAtTime(0.004, start + pulse * 0.9);
+      }
+      volume.gain.linearRampToValueAtTime(0.0001, now + length);
+      rumble.connect(filter);
+      filter.connect(volume);
+      volume.connect(audioContext.destination);
+      rumble.start(now);
+      rumble.stop(now + length + 0.03);
+    }
+    const flutePhrase = [
+      [659.25, 0.48], [783.99, 0.48], [880, 0.74], [783.99, 0.48],
+      [659.25, 0.48], [587.33, 0.72], [523.25, 0.48], [587.33, 0.9]
+    ];
+    function playFluteNote(pitch, length, startAt) {
+      const flute = audioContext.createOscillator();
+      const breath = audioContext.createOscillator();
+      const vibrato = audioContext.createOscillator();
+      const vibratoDepth = audioContext.createGain();
+      const breathLevel = audioContext.createGain();
+      const filter = audioContext.createBiquadFilter();
+      const envelope = audioContext.createGain();
+      flute.type = "sine";
+      breath.type = "sine";
+      vibrato.type = "sine";
+      flute.frequency.setValueAtTime(pitch, startAt);
+      breath.frequency.setValueAtTime(pitch * 2, startAt);
+      vibrato.frequency.setValueAtTime(5.1, startAt);
+      vibratoDepth.gain.setValueAtTime(2.4, startAt);
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(2400, startAt);
+      breathLevel.gain.setValueAtTime(0.1, startAt);
+      envelope.gain.setValueAtTime(0.0001, startAt);
+      envelope.gain.linearRampToValueAtTime(0.014, startAt + 0.09);
+      envelope.gain.setValueAtTime(0.014, startAt + length * 0.72);
+      envelope.gain.exponentialRampToValueAtTime(0.0001, startAt + length);
+      vibrato.connect(vibratoDepth);
+      vibratoDepth.connect(flute.frequency);
+      flute.connect(filter);
+      breath.connect(breathLevel);
+      breathLevel.connect(filter);
+      filter.connect(envelope);
+      envelope.connect(musicBus);
+      flute.start(startAt); breath.start(startAt); vibrato.start(startAt);
+      flute.stop(startAt + length + 0.02);
+      breath.stop(startAt + length + 0.02);
+      vibrato.stop(startAt + length + 0.02);
+    }
+    function scheduleFlutePhrase() {
+      if (!soundEnabled || !audioContext || audioContext.state !== "running") return;
+      const phraseStart = audioContext.currentTime + 0.08;
+      let offset = 0;
+      for (const [pitch, length] of flutePhrase) {
+        playFluteNote(pitch, length, phraseStart + offset);
+        offset += length + 0.08;
+      }
+      melodyTimer = setTimeout(scheduleFlutePhrase, (offset + 1.15) * 1000);
+    }
+    function playMeow() {
+      if (!soundEnabled || !audioContext || audioContext.state !== "running") return;
+      const now = audioContext.currentTime;
+      if (now - lastMeowAt < 0.5) return;
+      lastMeowAt = now;
+      const catIndex = index;
+      const voice = kittens[catIndex].voice;
+      const pitch = randomBetween(...voice.pitch);
+      const length = randomBetween(...voice.length);
+      playMeowTone(pitch, length);
+
+      const doubleMeow = Math.random() < voice.doubleChance;
+      if (doubleMeow) {
+        setTimeout(() => {
+          if (soundEnabled && index === catIndex) playMeowTone(pitch * randomBetween(1.08, 1.22), length * 0.72);
+        }, Math.max(120, length * 420));
+      }
+      if (Math.random() < voice.purrChance) {
+        setTimeout(() => {
+          if (soundEnabled && index === catIndex) playPurr(voice.purrPitch, randomBetween(0.72, 1.05));
+        }, Math.max(300, length * (doubleMeow ? 920 : 680)));
+      }
     }
     $("sound-toggle").addEventListener("click", async () => {
       if (soundEnabled) {
         soundEnabled = false;
+        clearTimeout(melodyTimer);
+        if (musicBus && audioContext) {
+          musicBus.gain.cancelScheduledValues(audioContext.currentTime);
+          musicBus.gain.setTargetAtTime(0.0001, audioContext.currentTime, 0.12);
+        }
       } else {
         const AudioContextType = window.AudioContext || window.webkitAudioContext;
         if (!AudioContextType) {
@@ -269,15 +369,23 @@
         try {
           await audioContext.resume();
           soundEnabled = audioContext.state === "running";
+          if (soundEnabled) {
+            musicBus ||= audioContext.createGain();
+            musicBus.connect(audioContext.destination);
+            musicBus.gain.cancelScheduledValues(audioContext.currentTime);
+            musicBus.gain.setValueAtTime(0.0001, audioContext.currentTime);
+            musicBus.gain.exponentialRampToValueAtTime(0.68, audioContext.currentTime + 0.8);
+            scheduleFlutePhrase();
+          }
         } catch {
           soundEnabled = false;
         }
       }
       $("sound-toggle").setAttribute("aria-pressed", String(soundEnabled));
-      $("sound-toggle").textContent = soundEnabled ? "♫ Meows on · click to mute" : "♫ Turn meows on";
+      $("sound-toggle").textContent = soundEnabled ? "♫ Sounds on · click to mute" : "♫ Turn sounds on";
       $("hint").textContent = soundEnabled
-        ? "Hover over your kitten for a little nuzzle and meow ♡"
-        : "Turn on meows, then hover over your kitten for a little nuzzle ♡";
+        ? "A gentle flute tune plays; hover for each kitten’s own hello ♡"
+        : "Turn on sounds for kitten voices and a gentle flute tune ♡";
     });
     $("kitten").addEventListener("pointerenter", playMeow);
     $("kitten").addEventListener("focus", playMeow);
