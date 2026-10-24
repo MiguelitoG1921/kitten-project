@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fff8ee">
+  <title>Little Nuzzle — pixel kittens</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #493b46;
+      --muted: #887984;
+      --pink: #e995a8;
+      --paper: #fffaf2;
+      --pixel: 6px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--ink);
+      font-family: "Trebuchet MS", "Arial Rounded MT Bold", system-ui, sans-serif;
+      background-color: #fff8ee;
+      background-image: radial-gradient(#efdcca 1px, transparent 1px);
+      background-size: 22px 22px;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    main { width: min(100%, 680px); text-align: center; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 13px;
+      border: 2px solid #f1dfcf;
+      border-radius: 999px;
+      background: #fffdf8;
+      color: #987f82;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 18px 0 8px;
+      font-size: clamp(2.4rem, 8vw, 4.6rem);
+      line-height: .98;
+      letter-spacing: -.065em;
+    }
+    h1 span { color: #df879c; }
+    .intro { margin: 14px 0 28px; color: var(--muted); font-size: clamp(1rem, 2.7vw, 1.15rem); }
+    .scene {
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-height: 370px;
+      overflow: hidden;
+      border: 3px solid #f0dfcf;
+      border-radius: 28px;
+      background: linear-gradient(#fffdf8 0 72%, #f8eddf 72%);
+      box-shadow: 0 12px 0 #ead9c9, 0 24px 50px #775d4a13;
+      isolation: isolate;
+    }
+    .sun { position: absolute; top: 34px; right: 11%; width: 56px; height: 56px; border-radius: 50%; background: #ffe8a9; opacity: .8; }
+    .cloud { position: absolute; top: 62px; left: 12%; width: 68px; height: 16px; border-radius: 20px; background: #f7e9e2; }
+    .cloud::before, .cloud::after { content: ""; position: absolute; bottom: 4px; width: 25px; height: 25px; border-radius: 50%; background: inherit; }
+    .cloud::before { left: 12px; } .cloud::after { left: 31px; width: 18px; height: 18px; }
+    .sparkle { position: absolute; color: #e7b96d; font-size: 22px; animation: twinkle 2.4s ease-in-out infinite; }
+    .sparkle.one { top: 33%; left: 16%; } .sparkle.two { top: 49%; right: 15%; animation-delay: .8s; }
+    .kitten-wrap { position: relative; z-index: 1; width: min(78%, 310px); cursor: pointer; transform-origin: 50% 72%; transition: transform .25s ease; }
+    .kitten-wrap:hover, .kitten-wrap:focus-visible { transform: translateY(-5px) scale(1.035); outline: none; }
+    svg { display: block; width: 100%; height: auto; overflow: visible; image-rendering: pixelated; shape-rendering: crispEdges; }
+    .cat { transform-origin: 150px 190px; transition: transform .35s cubic-bezier(.2,.8,.2,1); }
+    .kitten-wrap:hover .cat, .kitten-wrap:focus-visible .cat { transform: rotate(-3deg) translateX(4px); }
+    .eye { transition: opacity .15s ease; }
+    .nuzzle-eyes, .nuzzle-mouth { opacity: 0; transition: opacity .16s ease; }
+    .kitten-wrap:hover .eye, .kitten-wrap:focus-visible .eye { opacity: 0; }
+    .kitten-wrap:hover .nuzzle-eyes, .kitten-wrap:focus-visible .nuzzle-eyes,
+    .kitten-wrap:hover .nuzzle-mouth, .kitten-wrap:focus-visible .nuzzle-mouth { opacity: 1; }
+    .purr { transform-origin: 150px 245px; animation: purr 2.5s ease-in-out infinite; }
+    .kitten-wrap:hover .purr, .kitten-wrap:focus-visible .purr { animation-duration: .42s; }
+    .caption { position: absolute; z-index: 2; bottom: 17px; left: 0; right: 0; color: #a39391; font-size: 12px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; pointer-events: none; }
+    .controls { display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 28px; }
+    button {
+      min-height: 46px; padding: 0 19px; border: 2px solid #e9d6c8; border-radius: 14px;
+      color: var(--ink); background: #fffdf8; font: inherit; font-weight: 800; cursor: pointer;
+      box-shadow: 0 4px 0 #e9d6c8; transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+    }
+    button:hover { background: #fff1ed; }
+    button:active { transform: translateY(3px); box-shadow: 0 1px 0 #e9d6c8; }
+    button:focus-visible, .kitten-wrap:focus-visible { outline: 3px solid #dc91a2; outline-offset: 5px; }
+    .timer { min-width: 72px; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+    .hint { margin: 23px 0 0; color: #a39291; font-size: 13px; }
+    @keyframes purr { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+    @keyframes twinkle { 0%,100% { opacity: .45; transform: scale(.85) rotate(0); } 50% { opacity: 1; transform: scale(1.15) rotate(12deg); } }
+    @media (max-width: 480px) { .scene { min-height: 320px; border-radius: 22px; } .sun { width: 42px; height: 42px; } .cloud { transform: scale(.8); transform-origin: top left; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="eyebrow"><span aria-hidden="true">✦</span> a tiny pocket of calm <span aria-hidden="true">✦</span></div>
+    <h1>Little <span>Nuzzle</span></h1>
+    <p class="intro">A new tiny friend, just for you.</p>
+
+    <section class="scene" aria-label="A changing pixel kitten">
+      <div class="sun" aria-hidden="true"></div><div class="cloud" aria-hidden="true"></div>
+      <span class="sparkle one" aria-hidden="true">✦</span><span class="sparkle two" aria-hidden="true">✧</span>
+      <div class="kitten-wrap" id="kitten" role="button" tabindex="0" aria-label="Nuzzle the kitten">
+        <svg viewBox="0 0 300 300" role="img" aria-labelledby="cat-title cat-desc" xmlns="http://www.w3.org/2000/svg">
+          <title id="cat-title">A pixel kitten</title><desc id="cat-desc">A small, soft-looking pixel kitten. Hover or focus to make it nuzzle.</desc>
+          <g class="purr" fill="#dfbda2" opacity=".55"><rect x="69" y="252" width="162" height="12"/><rect x="87" y="264" width="126" height="6"/></g>
+          <g class="cat" id="cat-art">
+            <g id="ears"></g>
+            <g id="body"></g>
+            <g id="head"></g>
+            <g id="face"></g>
+            <g id="accessory"></g>
+          </g>
+        </svg>
+      </div>
+      <div class="caption" id="cat-name" aria-live="polite">Mochi · the daydreamer</div>
+    </section>
+
+    <div class="controls">
+      <button id="prev" type="button" aria-label="Show previous kitten">← <span>Previous</span></button>
+      <span class="timer" id="timer" aria-live="polite">Next in 15s</span>
+      <button id="next" type="button">Next kitten <span aria-hidden="true">→</span></button>
+    </div>
+    <p class="hint">Hover over your kitten for a little nuzzle ♡</p>
+  </main>
+  <script>
+    const kittens = [
+      { name: "Mochi · the daydreamer", fur: "#f3c7bd", shade: "#df9f9c", light: "#ffe5d9", inner: "#c77883", nose: "#d8798d", eyes: "#57434b", accent: "#d9889b", kind: "bow" },
+      { name: "Pippin · the little cloud", fur: "#e8e2d8", shade: "#c9c0b8", light: "#fff8e9", inner: "#db9e9e", nose: "#cf8291", eyes: "#536b72", accent: "#a8c8c2", kind: "scarf" },
+      { name: "Peaches · the sunbeam", fur: "#efbd7e", shade: "#d89659", light: "#ffe2a8", inner: "#c97875", nose: "#ce7785", eyes: "#654638", accent: "#e9af67", kind: "flower" },
+      { name: "Biscuit · the cozy one", fur: "#b8a0c8", shade: "#9478aa", light: "#e0cbe9", inner: "#ce91a2", nose: "#c9758c", eyes: "#51465f", accent: "#ddabc3", kind: "hat" }
+    ];
+    const $ = (id) => document.getElementById(id);
+    const NS = "http://www.w3.org/2000/svg";
+    let index = 0;
+    let seconds = 15;
+    let switchTimer;
+    function rect(parent, x, y, w, h, fill, extra = {}) {
+      const el = document.createElementNS(NS, "rect");
+      for (const [key, value] of Object.entries({ x, y, width: w, height: h, fill, ...extra })) el.setAttribute(key, value);
+      parent.appendChild(el); return el;
+    }
+    function path(parent, d, fill, extra = {}) {
+      const el = document.createElementNS(NS, "path");
+      el.setAttribute("d", d); el.setAttribute("fill", fill);
+      for (const [key, value] of Object.entries(extra)) el.setAttribute(key, value);
+      parent.appendChild(el); return el;
+    }
+    function draw(cat) {
+      ["ears", "body", "head", "face", "accessory"].forEach(id => $(id).replaceChildren());
+      const ears = $("ears"), body = $("body"), head = $("head"), face = $("face"), acc = $("accessory");
+      // Pixel-cut ear silhouettes and inset ear pixels.
+      path(ears, "M76 120V72h12V60h24v12h12v48h-12v12H88v-12z", cat.shade);
+      path(ears, "M82 112V76h12V70h14v10h10v34h-10v10H92v-12z", cat.fur);
+      path(ears, "M94 105V82h17v10h7v23h-9v-10z", cat.inner);
+      path(ears, "M176 120V72h12V60h24v12h12v48h-12v12h-24v-12z", cat.shade);
+      path(ears, "M182 114V80h10V70h14v6h12v36h-12v12h-14v-10z", cat.fur);
+      path(ears, "M184 115V92h7V82h17v23l-15 15z", cat.inner);
+      // Soft little loaf body, paws, and tail.
+      path(body, "M78 206v-18h12v-12h24v-10h72v10h24v12h12v18h-12v24h-12v12H90v-12H78z", cat.shade);
+      path(body, "M84 206v-18h12v-12h24v-8h60v8h24v12h12v18h-12v18h-12v12H96v-12H84z", cat.fur);
+      rect(body, 108, 218, 24, 18, cat.light); rect(body, 168, 218, 24, 18, cat.light);
+      path(body, "M68 210h14v18H68v12H56v-12h12z", cat.shade);
+      path(body, "M68 210h12v18H68v12H58v-12h10z", cat.fur);
+      // Squared-round head.
+      path(head, "M78 114h12V96h18V84h84v12h18v18h12v60h-12v18h-18v12h-84v-12H90v-18H78z", cat.shade);
+      path(head, "M84 114h12V96h18V90h72v6h18v18h12v54h-12v18h-18v12h-72v-12H96v-18H84z", cat.fur);
+      // Forehead highlight and cheek pixels.
+      rect(head, 108, 102, 24, 6, cat.light); rect(head, 102, 108, 6, 12, cat.light);
+      rect(head, 90, 156, 24, 12, cat.light, { opacity: ".55" }); rect(head, 186, 156, 24, 12, cat.light, { opacity: ".55" });
+      // Tiny markings vary with the coat.
+      if (index === 1) { rect(head, 96, 120, 6, 24, cat.shade); rect(head, 198, 126, 6, 24, cat.shade); rect(head, 138, 96, 6, 12, cat.shade); }
+      if (index === 2) { rect(head, 108, 126, 6, 18, cat.shade); rect(head, 186, 114, 6, 18, cat.shade); rect(head, 144, 96, 12, 6, cat.shade); }
+      if (index === 3) { rect(head, 102, 126, 6, 24, cat.shade); rect(head, 192, 138, 6, 18, cat.shade); rect(head, 132, 96, 6, 6, cat.shade); }
+      // Eyes switch to curved, happy nuzzle eyes while hovered or keyboard-focused.
+      rect(face, 108, 138, 12, 18, cat.eyes, { class: "eye" }); rect(face, 180, 138, 12, 18, cat.eyes, { class: "eye" });
+      rect(face, 108, 138, 6, 6, "#fff8ee", { class: "eye" }); rect(face, 180, 138, 6, 6, "#fff8ee", { class: "eye" });
+      path(face, "M102 148h24v6h-6v6h-12v-6h-6z M174 148h24v6h-6v6h-12v-6h-6z", cat.eyes, { class: "nuzzle-eyes" });
+      // Muzzle, nose, mouth, and whiskers.
+      rect(face, 132, 162, 18, 12, cat.light); rect(face, 150, 162, 18, 12, cat.light);
+      path(face, "M141 160h18v8h-6v6h-6v-6h-6z", cat.nose);
+      path(face, "M150 174v8h-12v6h-6v-6h6v-6z M150 182h12v6h6v-6h-6v-6h-6z", cat.eyes);
+      path(face, "M132 172v8h-12v-4h-12v-4h18z M168 172v8h12v-4h12v-4h-18z", cat.eyes, { opacity: ".75" });
+      path(face, "M147 172v8h6v-8z M135 180h15v6h-9v6h-6z M150 180h15v12h-6v-6h-9z", cat.eyes, { class: "nuzzle-mouth" });
+      // A tiny seasonal accessory gives each kitten its own personality.
+      if (cat.kind === "bow") {
+        path(acc, "M104 96l-18-12v18l18 6z M116 96l18-12v18l-18 6z", cat.accent); rect(acc, 104, 90, 12, 12, cat.nose);
+      } else if (cat.kind === "scarf") {
+        path(acc, "M96 186h108v12H96z M174 192h18v30h-12v-6h-6z", cat.accent); rect(acc, 108, 186, 72, 6, "#fff8ee", { opacity: ".6" });
+      } else if (cat.kind === "flower") {
+        rect(acc, 192, 87, 12, 12, "#ffe49a"); rect(acc, 186, 93, 12, 12, cat.accent); rect(acc, 198, 93, 12, 12, cat.accent); rect(acc, 192, 99, 12, 12, cat.accent); rect(acc, 192, 93, 12, 12, "#ffe49a");
+      } else {
+        path(acc, "M102 96l24-24h48l24 24v6h-96z", cat.accent); rect(acc, 96, 96, 108, 8, cat.shade); rect(acc, 126, 78, 42, 6, "#fff8ee", { opacity: ".65" });
+      }
+    }
+    function setKitten(nextIndex) {
+      index = (nextIndex + kittens.length) % kittens.length;
+      const cat = kittens[index];
+      draw(cat);
+      $("cat-name").textContent = cat.name;
+      $("cat-title").textContent = cat.name;
+      seconds = 15;
+      $("timer").textContent = `Next in ${seconds}s`;
+      clearInterval(switchTimer);
+      switchTimer = setInterval(() => setKitten(index + 1), 15000);
+    }
+    $("next").addEventListener("click", () => setKitten(index + 1));
+    $("prev").addEventListener("click", () => setKitten(index - 1));
+    $("kitten").addEventListener("click", () => $("kitten").classList.toggle("loved"));
+    $("kitten").addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); $("kitten").classList.toggle("loved"); }
+    });
+    setKitten(0);
+    setInterval(() => {
+      seconds = seconds > 1 ? seconds - 1 : 15;
+      $("timer").textContent = `Next in ${seconds}s`;
+    }, 1000);
+  </script>
+</body>
+</html>
+
